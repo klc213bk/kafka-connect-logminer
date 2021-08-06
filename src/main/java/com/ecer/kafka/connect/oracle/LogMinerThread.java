@@ -51,6 +51,7 @@ import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.ROLLBACK_FIELD
 import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.OPERATION_DDL;
 import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.DDL_TOPIC_POSTFIX;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.slf4j.Logger;
@@ -147,12 +148,15 @@ public class LogMinerThread implements Runnable {
               Timestamp commitTimeStamp=logMinerData.getTimestamp(COMMIT_TIMESTAMP_FIELD);
               Long commitScn=logMinerData.getLong(COMMIT_SCN_FIELD);
               String rowId=logMinerData.getString(ROW_ID_FIELD);
+              String rsId = logMinerData.getString("RS_ID");
+              Long ssn = logMinerData.getLong("SSN");
               //#log.info(operation+"-"+xid+"-"+scn);
 
               if (operation.equals(OPERATION_COMMIT)){
                 transaction = trnCollection.get(xid);            
                 if (transaction!=null){
                   //###log.info("Commit found for xid:{}",xid);
+                	log.info(">>>>> Commit found for xid:{}",xid);
                   //transaction.setIsCompleted(true);
                   if (transaction.getContainsRollback()){
                     int deletedRows=0;
@@ -186,6 +190,8 @@ public class LogMinerThread implements Runnable {
                     ix++;
                     if (ix % 10000 == 0) log.info(String.format("Fetched %s rows from db:%s ",ix,dbNameAlias)+" "+sequence+" "+oldSequence+" "+row.getScn()+" "+row.getCommitScn()+" "+row.getCommitTimestamp());
                     //log.info(row.getScn()+"-"+row.getCommitScn()+"-"+row.getTimestamp()+"-"+"-"+row.getCommitTimestamp()+"-"+row.getXid()+"-"+row.getSegName()+"-"+row.getRowId()+"-"+row.getOperation());                    
+                    log.info(">>>>>" + row.getScn()+"-"+row.getCommitScn()+"-"+row.getTimestamp()+"-"+"-"+row.getCommitTimestamp()+"-"+row.getXid()+"-"+row.getSegName()+"-"+row.getRowId()+"-"+row.getOperation());                    
+                    
                     try {
                       sourceRecordMq.offer(createRecords(row)); 
                     } catch (Exception eCreateRecord) {                      
@@ -237,12 +243,15 @@ public class LogMinerThread implements Runnable {
                 //@Data row = new Data(scn, segOwner, segName, sqlRedo,timeStamp,operation);
                 //@topic = config.getTopic().equals("") ? (config.getDbNameAlias()+DOT+row.getSegOwner()+DOT+row.getSegName()).toUpperCase() : topic;
                 topicName = topicConfig.equals("") ? (dbNameAlias+DOT+segOwner+DOT+(operation.equals(OPERATION_DDL) ? DDL_TOPIC_POSTFIX : segName)).toUpperCase() : topicConfig;
-                DMLRow dmlRow = new DMLRow(xid, scn, commitScn , timeStamp, operation, segOwner, segName, rowId, sqlRedo,topicName,commitTimeStamp,rollback);
+                log.info(">>>>>topicName :{}", topicName);
+                DMLRow dmlRow = new DMLRow(xid, scn, commitScn , timeStamp, operation, segOwner, segName, rowId, sqlRedo,topicName,commitTimeStamp,rollback, rsId, ssn);
                 //#log.info("Row :{} , scn:{} , commitScn:{} ,sqlRedo:{}",ix,scn,commitScn,sqlX);
+                log.info(">>>>>Row :{} , scn:{} , commitScn:{} ,sqlRedo:{}",ix,scn,commitScn,sqlX);
 
                 //dmlRowCollection2.clear();
                 List<DMLRow> dmlRowCollection = new ArrayList<>();
                 //###log.info("txnCollection size:{}",trnCollection.size());
+                log.info(">>>>>txnCollection size:{}",trnCollection.size());
                 //DMLRow dmlRow = new DMLRow(xid, scn, timeStamp, operation, segOwner, segName, rowId, sqlRedo,topic);
                 transaction = trnCollection.get(xid);
                 if (transaction != null){                  
@@ -315,6 +324,8 @@ public class LogMinerThread implements Runnable {
 
   private Struct setValueV2(DMLRow row,DataSchemaStruct dataSchemaStruct) {    
     Struct valueStruct = new Struct(dataSchemaStruct.getDmlRowSchema())
+    		  .put("RS_ID", row.getRsId())
+    		  .put("SSN", row.getSsn())
               .put(SCN_FIELD, row.getScn())
               .put(SEG_OWNER_FIELD, row.getSegOwner())
               .put(TABLE_NAME_FIELD, row.getSegName())
@@ -326,5 +337,5 @@ public class LogMinerThread implements Runnable {
     return valueStruct;
     
   }  
-    
+
 }

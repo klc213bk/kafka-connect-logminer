@@ -40,6 +40,7 @@ import java.util.concurrent.TimeUnit;
 import com.ecer.kafka.connect.oracle.models.Data;
 import com.ecer.kafka.connect.oracle.models.DataSchemaStruct;
 
+import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.source.SourceRecord;
@@ -119,10 +120,15 @@ public class OracleSourceTask extends SourceTask {
       logMinerSelectSql = utils.getLogMinerSelectSql();
 
       log.info("Starting LogMiner Session");
+      boolean archivedlogEnabled = false;
       if (dbVersion>=ORA_DESUPPORT_CM_VERSION){
         log.info("Db Version is {} and CONTINOUS_MINE is desupported",dbVersion);
         oraDeSupportCM=true;
         logMinerSelectSql = utils.getLogMinerSelectSqlDeSupportCM();
+      } else if (!archivedlogEnabled) {
+    	  log.info("archivedlog is NOT enabled");
+          oraDeSupportCM=true;
+          logMinerSelectSql = utils.getLogMinerSelectSqlDeSupportCM();
       }
       logMinerStartScr=logMinerStartScr+(oraDeSupportCM ? logMinerOptionsDeSupportCM : logMinerOptions)+") \n; end;";
       //logMinerStartScr=logMinerStartScr+logMinerOptions+") \n; end;";
@@ -286,6 +292,12 @@ public class OracleSourceTask extends SourceTask {
       }else{
         
         records.add(sourceRecordMq.take());
+        
+        log.info(">>>> generate records size={}", records.size());
+        for (SourceRecord record : records) {
+        	log.info(">>>> record={}", ToStringBuilder.reflectionToString(record));
+        }
+        
         return records;
       }      
       log.info("Logminer stoppped successfully");       

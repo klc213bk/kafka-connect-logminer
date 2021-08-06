@@ -16,8 +16,10 @@ public class DMLRow{
     private String sqlRedo = null;
     private String topic = null;
     private String rollback = null;
+    private String rsId = null;
+    private Long ssn = 0L;
 
-    public DMLRow(String xid,Long scn,Long commitScn,Timestamp timestamp,String operation,String segOwner,String segName,String rowId,String sqlRedo,String topic,Timestamp commitTimeStamp,String rollback){
+    public DMLRow(String xid,Long scn,Long commitScn,Timestamp timestamp,String operation,String segOwner,String segName,String rowId,String sqlRedo,String topic,Timestamp commitTimeStamp,String rollback, String rsId, Long ssn){
         this.xid = xid;
         this.scn = scn;
         this.commitScn = commitScn;
@@ -30,6 +32,8 @@ public class DMLRow{
         this.topic = topic;
         this.commitTimestamp = commitTimeStamp;
         this.rollback = rollback;
+        this.rsId = rsId;
+        this.ssn = ssn;
     }
 
     public String getXid(){
@@ -128,11 +132,27 @@ public class DMLRow{
         this.rollback = rollback;
     }
     
-    @Override
+    public String getRsId() {
+		return rsId;
+	}
+
+	public void setRsId(String rsId) {
+		this.rsId = rsId;
+	}
+
+	public Long getSsn() {
+		return ssn;
+	}
+
+	public void setSsn(Long ssn) {
+		this.ssn = ssn;
+	}
+
+	@Override
     public String toString(){
 		return "LogMinerRow [xid=" + xid + ", scn=" + scn + ", timestamp=" + timestamp + ", operation="
 				+ operation + ", segOwner=" + segOwner + ", segName=" + segName + ", rowId=" + rowId
-				+ ", sqlRedo=" + sqlRedo +"]";
+				+ ", sqlRedo=" + sqlRedo + ", rsId=" + rsId + ", ssn=" + ssn +"]";
     }
 
 }

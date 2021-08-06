@@ -413,6 +413,8 @@ public class OracleSourceConnectorUtils{
       }
       Schema newSchema = SchemaBuilder.struct()
                   .name(preSchemaName)
+                  .field("RS_ID", Schema.STRING_SCHEMA)
+                  .field("SSN", Schema.INT64_SCHEMA)
                   .field(SCN_FIELD, Schema.INT64_SCHEMA)
                   .field(SEG_OWNER_FIELD, Schema.STRING_SCHEMA)
                   .field(TABLE_NAME_FIELD,Schema.STRING_SCHEMA)
