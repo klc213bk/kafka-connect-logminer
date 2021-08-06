@@ -156,7 +156,6 @@ public class LogMinerThread implements Runnable {
                 transaction = trnCollection.get(xid);            
                 if (transaction!=null){
                   //###log.info("Commit found for xid:{}",xid);
-                	log.info(">>>>> Commit found for xid:{}",xid);
                   //transaction.setIsCompleted(true);
                   if (transaction.getContainsRollback()){
                     int deletedRows=0;
