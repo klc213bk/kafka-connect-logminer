@@ -1,4 +1,4 @@
-package com.ecer.kafka.connect.oracle;
+package com.transglobe.kafka.connect.oracle;
 
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;

@@ -1,4 +1,4 @@
-package com.ecer.kafka.connect.oracle.models;
+package com.transglobe.kafka.connect.oracle.models;
 
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;

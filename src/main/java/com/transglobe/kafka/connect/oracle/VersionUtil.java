@@ -1,4 +1,4 @@
-package com.ecer.kafka.connect.oracle;
+package com.transglobe.kafka.connect.oracle;
 
 /**
  * Created by jeremy on 5/3/16.

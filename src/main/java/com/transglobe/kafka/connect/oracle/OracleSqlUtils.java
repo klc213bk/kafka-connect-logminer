@@ -1,4 +1,4 @@
-package com.ecer.kafka.connect.oracle;
+package com.transglobe.kafka.connect.oracle;
 
 import java.sql.CallableStatement;
 import java.sql.Connection;
@@ -21,6 +21,61 @@ public class OracleSqlUtils {
         
     }
 
+    public static Boolean getLogFilesV2(Connection conn,Long currScn, boolean archivedlogEnabled) throws SQLException{        
+        int i = 0;
+        String option;
+        List <String> logFilesBase = new ArrayList<String>();
+        List <String> logFilesLogmnr = new ArrayList<String>();
+        String sqlBase = (archivedlogEnabled == true)? 
+        		OracleConnectorSQL.LOGMINER_LOG_FILES_LOG$ : OracleConnectorSQL.LOGMINER_LOG_FILES_LOG_ARCHIVE_DISABLED$;
+        sqlBase = sqlBase.replace(":vcurrscn",currScn.toString());
+        PreparedStatement ps = conn.prepareCall(sqlBase);
+        log.info("################################# Scanning Log Files for SCN :{}",currScn);
+        ResultSet rs = ps.executeQuery();
+        while (rs.next()){
+            log.info("Base log files {}",rs.getString("NAME"));
+            logFilesBase.add(rs.getString("NAME"));
+        }
+        rs.close();
+        ps.close();
+
+        ps = conn.prepareCall(OracleConnectorSQL.LOGMINER_LOG_FILES_LOGMNR$);
+        rs = ps.executeQuery();
+        while (rs.next()){
+            log.info("logmnr_logs log files {}",rs.getString("NAME"));
+            logFilesLogmnr.add(rs.getString("NAME"));
+        }
+
+        if (!logFilesBase.equals(logFilesLogmnr)){
+            ListIterator<String> iterator = logFilesBase.listIterator();
+            while (iterator.hasNext()){
+                String logFile = iterator.next();                
+                log.info("Log file will be mined {}",logFile);
+                if (i==0){
+                    option = "DBMS_LOGMNR.NEW";
+                    i++;
+                }else {
+                    option = "DBMS_LOGMNR.ADDFILE";
+                }            
+                String addLogFileStr = OracleConnectorSQL.LOGMINER_ADD_LOGFILE.replace(":logfilename",logFile).replace(":option", option);
+                log.info(">>>> addLogFileStr={}", addLogFileStr);
+                executeCallableStmt(conn, addLogFileStr);
+//                executeCallableStmt(conn, OracleConnectorSQL.LOGMINER_ADD_LOGFILE.replace(":logfilename",logFile).replace(":option", option));                
+            
+                // check addLogFile
+                log.info(">>>> check addLogFile...");
+                ps = conn.prepareCall(OracleConnectorSQL.LOGMINER_LOG_FILES_LOGMNR$);
+                rs = ps.executeQuery();
+                while (rs.next()){
+                	log.info(">>>>>addLogFile= {}",rs.getString("NAME"));
+                }
+            }
+        }
+        log.info("#################################");
+        rs.close();
+        ps.close();        
+        return i>0 ? true : false;        
+    }
     public static Boolean getLogFilesV2(Connection conn,Long currScn) throws SQLException{        
         int i = 0;
         String option;
@@ -64,7 +119,6 @@ public class OracleSqlUtils {
         ps.close();        
         return i>0 ? true : false;        
     }
-
     public static Boolean getLogFiles(Connection conn,String sql,Long currScn) throws SQLException{        
         int i = 0;
         String option;

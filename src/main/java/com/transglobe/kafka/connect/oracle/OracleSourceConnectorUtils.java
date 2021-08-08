@@ -1,32 +1,32 @@
-package com.ecer.kafka.connect.oracle;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.BEFORE_DATA_ROW_FIELD;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.COLUMN_NAME_FIELD;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.DATA_LENGTH_FIELD;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.DATA_PRECISION_FIELD;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.DATA_ROW_FIELD;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.DATA_SCALE_FIELD;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.DATA_TYPE_FIELD;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.DATE_TYPE;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.DOT;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.EMPTY_SCHEMA;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.NULLABLE_FIELD;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.NULL_FIELD;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.NUMBER_TYPE;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.OPERATION_DELETE;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.OPERATION_FIELD;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.OPERATION_INSERT;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.OPERATION_UPDATE;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.OPTIONAL_TIMESTAMP_SCHEMA;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.PK_COLUMN_FIELD;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.SCN_FIELD;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.SEG_OWNER_FIELD;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.SQL_REDO_FIELD;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.TABLE_NAME_FIELD;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.TIMESTAMP_FIELD;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.TIMESTAMP_SCHEMA;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.TIMESTAMP_TYPE;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.UQ_COLUMN_FIELD;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.OPERATION_DDL;
+package com.transglobe.kafka.connect.oracle;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.BEFORE_DATA_ROW_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.COLUMN_NAME_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.DATA_LENGTH_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.DATA_PRECISION_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.DATA_ROW_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.DATA_SCALE_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.DATA_TYPE_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.DATE_TYPE;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.DOT;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.EMPTY_SCHEMA;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.NULLABLE_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.NULL_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.NUMBER_TYPE;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.OPERATION_DDL;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.OPERATION_DELETE;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.OPERATION_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.OPERATION_INSERT;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.OPERATION_UPDATE;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.OPTIONAL_TIMESTAMP_SCHEMA;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.PK_COLUMN_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.SCN_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.SEG_OWNER_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.SQL_REDO_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.TABLE_NAME_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.TIMESTAMP_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.TIMESTAMP_SCHEMA;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.TIMESTAMP_TYPE;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.UQ_COLUMN_FIELD;
 
 import java.net.ConnectException;
 import java.sql.CallableStatement;
@@ -42,13 +42,13 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.ecer.kafka.connect.oracle.models.DataSchemaStruct;
-
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.transglobe.kafka.connect.oracle.models.DataSchemaStruct;
 
 import net.sf.jsqlparser.JSQLParserException;
 import net.sf.jsqlparser.expression.Expression;
@@ -79,7 +79,7 @@ public class OracleSourceConnectorUtils{
     private final Map<String,String> tableColType = new HashMap<>();   
     private final Map<String,Schema> tableSchema = new HashMap<>();
     private final Map<String,Schema> tableRecordSchema = new HashMap<>();
-    private final Map<String,com.ecer.kafka.connect.oracle.models.Column> tabColsMap = new HashMap<>();    
+    private final Map<String,com.transglobe.kafka.connect.oracle.models.Column> tabColsMap = new HashMap<>();    
 
     OracleSourceConnectorConfig config;
     Connection dbConn;
@@ -237,7 +237,7 @@ public class OracleSourceConnectorUtils{
             break;
         }
         dataSchemaBuiler.field(columnName,columnSchema);
-        com.ecer.kafka.connect.oracle.models.Column column = new com.ecer.kafka.connect.oracle.models.Column(owner, tableName, columnName, nullable, dataType, dataLength, dataScale, pkColumn, uqColumn,columnSchema);
+        com.transglobe.kafka.connect.oracle.models.Column column = new com.transglobe.kafka.connect.oracle.models.Column(owner, tableName, columnName, nullable, dataType, dataLength, dataScale, pkColumn, uqColumn,columnSchema);
         String keyTabCols = owner+DOT+tableName+DOT+columnName;
         tabColsMap.put(keyTabCols, column); 
         log.debug("tabColsMap entry added: {} = {}", keyTabCols, column.toString());

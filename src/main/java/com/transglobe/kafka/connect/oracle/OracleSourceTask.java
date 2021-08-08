@@ -1,25 +1,25 @@
-package com.ecer.kafka.connect.oracle;
+package com.transglobe.kafka.connect.oracle;
 
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.BEFORE_DATA_ROW_FIELD;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.COMMITSCN_POSITION_FIELD;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.COMMIT_SCN_FIELD;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.CSF_FIELD;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.DATA_ROW_FIELD;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.DOT;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.LOG_MINER_OFFSET_FIELD;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.OPERATION_FIELD;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.POSITION_FIELD;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.ROWID_POSITION_FIELD;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.ROW_ID_FIELD;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.SCN_FIELD;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.SEG_OWNER_FIELD;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.SQL_REDO_FIELD;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.TABLE_NAME_FIELD;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.TEMPORARY_TABLE;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.TIMESTAMP_FIELD;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.ORA_DESUPPORT_CM_VERSION;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.OPERATION_DDL;
-import static com.ecer.kafka.connect.oracle.OracleConnectorSchema.DDL_TOPIC_POSTFIX;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.BEFORE_DATA_ROW_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.COMMITSCN_POSITION_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.COMMIT_SCN_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.CSF_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.DATA_ROW_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.DDL_TOPIC_POSTFIX;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.DOT;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.LOG_MINER_OFFSET_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.OPERATION_DDL;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.OPERATION_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.ORA_DESUPPORT_CM_VERSION;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.POSITION_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.ROWID_POSITION_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.ROW_ID_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.SCN_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.SEG_OWNER_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.SQL_REDO_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.TABLE_NAME_FIELD;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.TEMPORARY_TABLE;
+import static com.transglobe.kafka.connect.oracle.OracleConnectorSchema.TIMESTAMP_FIELD;
 
 import java.sql.CallableStatement;
 import java.sql.Connection;
@@ -37,9 +37,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import com.ecer.kafka.connect.oracle.models.Data;
-import com.ecer.kafka.connect.oracle.models.DataSchemaStruct;
-
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
@@ -47,6 +44,9 @@ import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.transglobe.kafka.connect.oracle.models.Data;
+import com.transglobe.kafka.connect.oracle.models.DataSchemaStruct;
 
 import net.sf.jsqlparser.JSQLParserException;
 import java.util.concurrent.ExecutorService;
@@ -202,7 +202,7 @@ public class OracleSourceTask extends SourceTask {
       log.info("Logminer started successfully");
       }else{
         //tLogMiner = new Thread(new LogMinerThread(sourceRecordMq,dbConn,streamOffsetScn, logMinerStartStmt,logMinerSelectSql,config.getDbFetchSize(),topic,dbName,utils));        
-        tLogMiner = new LogMinerThread(sourceRecordMq,dbConn,streamOffsetScn, logMinerStartStmt,logMinerSelectSql,config.getDbFetchSize(),topic,dbName,utils);
+        tLogMiner = new LogMinerThread(sourceRecordMq,dbConn,streamOffsetScn, logMinerStartStmt,logMinerSelectSql,config.getDbFetchSize(),topic,dbName,utils, archivedlogEnabled);
         //tLogMiner.start();
         executor.submit(tLogMiner);
         
