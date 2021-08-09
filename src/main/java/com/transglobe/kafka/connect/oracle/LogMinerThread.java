@@ -156,7 +156,7 @@ public class LogMinerThread implements Runnable {
               String rsId = logMinerData.getString("RS_ID");
               Long ssn = logMinerData.getLong("SSN");
               //#log.info(operation+"-"+xid+"-"+scn);
-              log.info(">>>seq=" + sequence + "," + operation+"-"+xid+"-"+scn + ", " + rsId + "-" + ssn);
+//              log.info(">>>seq=" + sequence + "," + operation+"-"+xid+"-"+scn + ", " + rsId + "-" + ssn);
               
               if (operation.equals(OPERATION_COMMIT)){
                 transaction = trnCollection.get(xid);            
