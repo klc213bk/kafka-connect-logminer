@@ -148,6 +148,8 @@ public class OracleSourceConnectorUtils{
         }
         logMinerSelectSql+=logMinerSelectWhereStmt;
         logMinerSelectSqlDeSupportCM+=logMinerSelectWhereStmt+"))";
+        
+        log.info(">>>>> logMinerSelectSqlDeSupportCM={}", logMinerSelectSqlDeSupportCM);
     }
 
     protected void loadTable(String owner,String tableName,String operation) throws SQLException{
