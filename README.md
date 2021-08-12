@@ -1,27 +1,45 @@
 # kafka-connect-logminer
 
-SQL> ALTER TABLE EBAOPRD1.T_POLICY_HOLDER ADD SUPPLEMENTAL LOG DATA (ALL) COLUMNS;
-SQL> ALTER TABLE EBAOPRD1.T_INSURED_LIST ADD SUPPLEMENTAL LOG DATA (ALL) COLUMNS;
-SQL> ALTER TABLE EBAOPRD1.T_CONTRACT_BENE ADD SUPPLEMENTAL LOG DATA (ALL) COLUMNS;
-SQL> ALTER TABLE EBAOPRD1.T_POLICY_HOLDER_LOG ADD SUPPLEMENTAL LOG DATA (ALL) COLUMNS;
-SQL> ALTER TABLE EBAOPRD1.T_INSURED_LIST_LOG ADD SUPPLEMENTAL LOG DATA (ALL) COLUMNS;
-SQL> ALTER TABLE EBAOPRD1.T_CONTRACT_BENE_LOG ADD SUPPLEMENTAL LOG DATA (ALL) COLUMNS;
-SQL> ALTER TABLE EBAOPRD1.T_ADDRESS ADD SUPPLEMENTAL LOG DATA (ALL) COLUMNS;
+#1.Enable Table-level Supplemental Log
+#以table owner 執行
+#for project streaming PartyContact(PCR420669)
+SQL> ALTER TABLE LS_EBAO.T_POLICY_HOLDER ADD SUPPLEMENTAL LOG DATA (ALL) COLUMNS;
+SQL> ALTER TABLE LS_EBAO.T_INSURED_LIST ADD SUPPLEMENTAL LOG DATA (ALL) COLUMNS;
+SQL> ALTER TABLE LS_EBAO.T_CONTRACT_BENE ADD SUPPLEMENTAL LOG DATA (ALL) COLUMNS;
+SQL> ALTER TABLE LS_EBAO.T_POLICY_HOLDER_LOG ADD SUPPLEMENTAL LOG DATA (ALL) COLUMNS;
+SQL> ALTER TABLE LS_EBAO.T_INSURED_LIST_LOG ADD SUPPLEMENTAL LOG DATA (ALL) COLUMNS;
+SQL> ALTER TABLE LS_EBAO.T_CONTRACT_BENE_LOG ADD SUPPLEMENTAL LOG DATA (ALL) COLUMNS;
+SQL> ALTER TABLE LS_EBAO.T_ADDRESS ADD SUPPLEMENTAL LOG DATA (ALL) COLUMNS;
 
-SQL> ALTER TABLE EBAOPRD1.LS_EBAO.T_COMMISION_FEE
-SQL> ALTER TABLE EBAOPRD1.LS_EBAO.T_CONTRACT_EXTEND_CX
-SQL> ALTER TABLE EBAOPRD1.LS_EBAO.T_CONTRACT_EXTEND_LOG
-SQL> ALTER TABLE EBAOPRD1.LS_EBAO.T_CONTRACT_PRODUCT_LOG
-SQL> ALTER TABLE EBAOPRD1.LS_EBAO.T_IMAGE
-SQL> ALTER TABLE EBAOPRD1.LS_EBAO.JBPM_VARIABLEINSTANCE
-SQL> ALTER TABLE EBAOPRD1.LS_EBAO.T_POLICY_CHANGE
-SQL> ALTER TABLE EBAOPRD1.LS_EBAO.T_POLICY_PRINT_JOB
-SQL> ALTER TABLE EBAOPRD1.LS_EBAO.T_PRODUCT_COMMISION
-SQL> ALTER TABLE EBAOPRD1.LS_EBAO.T_PRODUCTION_DETAIL
+#for project streaming ODS
+SQL> ALTER TABLE LS_EBAO.T_COMMISION_FEE ADD SUPPLEMENTAL LOG DATA (ALL) COLUMNS;
+SQL> ALTER TABLE LS_EBAO.T_CONTRACT_EXTEND_CX ADD SUPPLEMENTAL LOG DATA (ALL) COLUMNS;
+SQL> ALTER TABLE LS_EBAO.T_CONTRACT_EXTEND_LOG ADD SUPPLEMENTAL LOG DATA (ALL) COLUMNS;
+SQL> ALTER TABLE LS_EBAO.T_CONTRACT_PRODUCT_LOG ADD SUPPLEMENTAL LOG DATA (ALL) COLUMNS;
+SQL> ALTER TABLE LS_EBAO.T_IMAGE ADD SUPPLEMENTAL LOG DATA (ALL) COLUMNS;
+SQL> ALTER TABLE LS_EBAO.JBPM_VARIABLEINSTANCE ADD SUPPLEMENTAL LOG DATA (ALL) COLUMNS;
+SQL> ALTER TABLE LS_EBAO.T_POLICY_CHANGE ADD SUPPLEMENTAL LOG DATA (ALL) COLUMNS;
+SQL> ALTER TABLE LS_EBAO.T_POLICY_PRINT_JOB ADD SUPPLEMENTAL LOG DATA (ALL) COLUMNS;
+SQL> ALTER TABLE LS_EBAO.T_PRODUCT_COMMISION ADD SUPPLEMENTAL LOG DATA (ALL) COLUMNS;
+SQL> ALTER TABLE LS_EBAO.T_PRODUCTION_DETAIL ADD SUPPLEMENTAL LOG DATA (ALL) COLUMNS;
 
 
+#2.privileges
+#以sysdba 執行
+SQL>CREATE USER tglminer IDENTIFIED BY tglminerpass default tablespace users;
+SQL>GRANT CREATE session,execute_catalog_role,select any transaction,select any dictionary TO tglminer;
+SQL>ALTER USER tglminer QUOTA UNLIMITED ON users;
+SQL>GRANT CREATE PROCEDURE TO tglminer;
+SQL>GRANT CREATE TABLE TO tglminer;
+SQL>GRANT CREATE SESSION TO tglminer;
+SQL>GRANT EXECUTE ON SYS.DBMS_LOGMNR TO tglminer;
+SQL>GRANT EXECUTE ON SYS.DBMS_LOGMNR_D TO tglminer;
+SQL>GRANT LOGMINING TO tglminer;
 
 
+#3.read only user for DB
+
+#######################################################################################
 select current_scn from v$database;
 
 
@@ -146,23 +164,7 @@ Enable supplemental logging
     sqlplus / as sysdba    
     SQL>alter database add supplemental log data (all) columns;
 
-In order to execute connector successfully, connector must be started with privileged Oracle user. If given user has DBA role, this step can be skipped. Otherwise, the following scripts need to be executed to create a privileged user:
 
-    create role logmnr_role;
-    grant create session to logmnr_role;
-    grant  execute_catalog_role,select any transaction ,select any dictionary to logmnr_role;
-    create user kminer identified by kminerpass;
-    grant  logmnr_role to kminer;
-    alter user kminer quota unlimited on users;
-
-In a multitenant configuration, the privileged Oracle user must be a "common user" and some multitenant-specific grants need to be made:
-
-    create role c##logmnr_role;
-    grant create session to c##logmnr_role;
-    grant  execute_catalog_role,select any transaction ,select any dictionary,logmining to c##logmnr_role;
-    create user c##kminer identified by kminerpass;
-    grant  c##logmnr_role to c##kminer;
-    alter user c##kminer quota unlimited on users set container_data = all container = current;
 
 # Configuration
 
