@@ -49,10 +49,11 @@ archive log mod : disabled
 
 
 ########################################## Connector #######################################
+curl http://localhost:8083
 
-http://http://localhost:8083
+http://localhost:8083
 =>{"version":"2.7.0","commit":"448719dc99a19793","kafka_cluster_id":"lNaoMMWMQxSN1TDBN_2QHA"}
-http://http://localhost:8083/connectors
+http://localhost:8083/connectors
 =>["oracle-logminer-connector"]
 http://localhost:8083/connectors/oracle-logminer-connector
 =>{"name":"oracle-logminer-connector","config":{"connector.class":"com.transglobe.kafka.connect.oracle.OracleSourceConnector","reset.offset":"true","db.hostname":"10.67.67.63","tasks.max":"1","db.user.password":"ls_ebaopwd","table.blacklist":"","table.whitelist":"ls_ebao.TEST_T_POLICY_HOLDER,ls_ebao.TEST_T_INSURED_LIST,ls_ebao.TEST_T_CONTRACT_BENE,ls_ebao.TEST_T_ADDRESS","db.user":"ls_ebao","start.scn":"","db.fetch.size":"1","db.port":"1521","name":"oracle-logminer-connector","multitenant":"false","topic":"","parse.dml.data":"true","db.name":"ebaouat1","db.name.alias":"ebaouat1"},"tasks":[{"connector":"oracle-logminer-connector","task":0}],"type":"source"}

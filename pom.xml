@@ -38,6 +38,11 @@
 			<artifactId>commons-lang3</artifactId>
 			<version>3.11</version>
 		</dependency>
+		<dependency>
+			<groupId>com.transglobe.streamingetl</groupId>
+			<artifactId>streamingetl-common</artifactId>
+			<version>1.0</version>
+		</dependency>
 	</dependencies>
 
 	<build>
