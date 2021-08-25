@@ -114,6 +114,7 @@ public class OracleSourceTask extends SourceTask {
 		parseDmlData=config.getParseDmlData();
 		String startSCN = config.getStartScn();
 		log.info("Oracle Kafka Connector is starting on {}",config.getDbNameAlias());
+		long logminerState = 0L;
 		try {      
 			dbConn = new OracleConnection().connect(config);
 			utils = new OracleSourceConnectorUtils(dbConn, config);
@@ -166,12 +167,12 @@ public class OracleSourceTask extends SourceTask {
 				}
 			}
 
-			if (!startSCN.equals("")){
-				log.info("Resetting offset with specified start SCN:{}",startSCN);
-				streamOffsetScn=Long.parseLong(startSCN);
-				//streamOffsetScn-=1;
-				skipRecord=false;
-			}
+			//			if (!startSCN.equals("")){
+			//				log.info("Resetting offset with specified start SCN:{}",startSCN);
+			//				streamOffsetScn=Long.parseLong(startSCN);
+			//				//streamOffsetScn-=1;
+			//				skipRecord=false;
+			//			}
 
 			if (config.getResetOffset()){
 				log.info("Resetting offset with new SCN");
@@ -179,8 +180,23 @@ public class OracleSourceTask extends SourceTask {
 				streamOffsetCommitScn=0L;
 				streamOffsetRowId="";        
 			} else {
-				// get scn from table 'STREAMING_ETL'
-				StreamingEtlUtils.queryEariestActiveLoadingStartScn(dbConn);
+				if (!startSCN.equals("")){
+					log.info("Resetting offset with specified start SCN:{}",startSCN);
+					streamOffsetScn=Long.parseLong(startSCN);
+					//streamOffsetScn-=1;
+					skipRecord=false;
+				} else {
+					// get scn from table 'STREAMING_ETL'
+					Long loadingStartScn = StreamingEtlUtils.queryEariestActiveLoadingStartScn(dbConn);
+					log.info("get scn from table 'STREAMING_ETL', loadingStartScn={}", loadingStartScn);
+
+					if (loadingStartScn != null) {
+						streamOffsetScn = loadingStartScn;
+					} else {
+						streamOffsetScn = 0L;
+						log.info("No appropriate start scn found. set streamOffsetScn to 0!!!!");
+					}
+				}
 			}
 
 			if (streamOffsetScn==0L){
@@ -206,6 +222,7 @@ public class OracleSourceTask extends SourceTask {
 				logMinerData=logMinerSelect.executeQuery();
 				log.info("Logminer started successfully");
 			}else{
+				log.info("LogMinerThread is starting ... ");
 				//tLogMiner = new Thread(new LogMinerThread(sourceRecordMq,dbConn,streamOffsetScn, logMinerStartStmt,logMinerSelectSql,config.getDbFetchSize(),topic,dbName,utils));        
 				tLogMiner = new LogMinerThread(sourceRecordMq,dbConn,streamOffsetScn, logMinerStartStmt,logMinerSelectSql,config.getDbFetchSize(),topic,dbName,utils, archivedlogEnabled);
 				//tLogMiner.start();
@@ -216,33 +233,36 @@ public class OracleSourceTask extends SourceTask {
 					public void run(){
 						tLogMiner.shutDown();
 						executor.shutdown();
+						long logminerState = 0L;
 						try {              
 							log.info("Waiting for logminer thread to shut down,exiting cleanly");
 							if (executor.awaitTermination(20000, TimeUnit.MILLISECONDS)) {                
 							}
 						} catch (Exception e) {
 							log.error(e.getMessage());
+							logminerState = CommonConstants.STREAMING_ETL_LOGMINER_STATE_ERROR;
 						} finally {
-							try {
-								StreamingEtlUtils.updateStreamingEtlLogminerState(dbConn, CommonConstants.STREAMING_ETL_LOGMINER_STATE_SHUTDOWN);
-							} catch (Exception e1) {
-								log.error(">>> error call updateStreamingEtlLogminerState {}", e1);
+							if (logminerState == CommonConstants.STREAMING_ETL_LOGMINER_STATE_ERROR) {
+								log.error(">>> log Logminer state error");
+								LogminerUtils.updateStreamingEtlLogminerState(dbConn, CommonConstants.STREAMING_ETL_LOGMINER_STATE_ERROR);
 							}
 						}
 					}
 				});
 			}
-			
-			StreamingEtlUtils.updateStreamingEtlLogminerState(dbConn, CommonConstants.STREAMING_ETL_LOGMINER_STATE_RUNNING);
-			
+
+			LogminerUtils.updateStreamingEtlLogminerState(dbConn, CommonConstants.STREAMING_ETL_LOGMINER_STATE_RUNNING);
 		}catch(SQLException e){
-			// log the error to streaming etl
-			try {
-				StreamingEtlUtils.updateStreamingEtlLogminerState(dbConn, CommonConstants.STREAMING_ETL_LOGMINER_STATE_ERROR);
-			} catch (Exception e1) {
-				log.error(">>> error call updateStreamingEtlLogminerState {}", e1);
-			}
+			//log the error to streaming etl
+			logminerState = CommonConstants.STREAMING_ETL_LOGMINER_STATE_ERROR;
+		
 			throw new ConnectException("Error at database tier, Please check : "+e.toString());
+		}
+		finally {
+			if (logminerState == CommonConstants.STREAMING_ETL_LOGMINER_STATE_ERROR) {
+				log.error(">>> log Logminer state error");
+				LogminerUtils.updateStreamingEtlLogminerState(dbConn, CommonConstants.STREAMING_ETL_LOGMINER_STATE_ERROR);
+			}
 		}
 	}    
 
@@ -250,6 +270,7 @@ public class OracleSourceTask extends SourceTask {
 	public List<SourceRecord> poll() throws InterruptedException {
 		//TODO: Create SourceRecord objects that will be sent the kafka cluster. 
 		String sqlX="";
+		long logminerState = 0L;
 		try {
 			ArrayList<SourceRecord> records = new ArrayList<>();
 			if (!oraDeSupportCM){
@@ -323,34 +344,25 @@ public class OracleSourceTask extends SourceTask {
 			log.info("Logminer stoppped successfully");       
 		} catch (SQLException e){
 			log.error("SQL error during poll",e );
-			try {
-				StreamingEtlUtils.updateStreamingEtlLogminerState(dbConn, CommonConstants.STREAMING_ETL_LOGMINER_STATE_ERROR);
-			} catch (Exception e1) {
-				log.error(">>> error call updateStreamingEtlLogminerState {}", e1);
-			}
+			logminerState = CommonConstants.STREAMING_ETL_LOGMINER_STATE_ERROR;
 		}catch(JSQLParserException e){
 			log.error("SQL parser error during poll ", e);
-			try {
-				StreamingEtlUtils.updateStreamingEtlLogminerState(dbConn, CommonConstants.STREAMING_ETL_LOGMINER_STATE_ERROR);
-			} catch (Exception e1) {
-				log.error(">>> error call updateStreamingEtlLogminerState {}", e1);
-			}
+			logminerState = CommonConstants.STREAMING_ETL_LOGMINER_STATE_ERROR;
 		}
 		catch (InterruptedException e) {
-			try {
-				StreamingEtlUtils.updateStreamingEtlLogminerState(dbConn, CommonConstants.STREAMING_ETL_LOGMINER_STATE_SHUTDOWN);
-			} catch (Exception e1) {
-				log.error(">>> error call updateStreamingEtlLogminerState {}", e1);
-			}
+			log.error("interrupted during poll ", e);
+			logminerState = CommonConstants.STREAMING_ETL_LOGMINER_STATE_ERROR;
 			throw e;
 		}
 		catch(Exception e){
 			log.error("Error during poll on topic {} SQL :{}", topic, sqlX, e);
-			try {
-				StreamingEtlUtils.updateStreamingEtlLogminerState(dbConn, CommonConstants.STREAMING_ETL_LOGMINER_STATE_ERROR);
-			} catch (Exception e1) {
-				log.error(">>> error call updateStreamingEtlLogminerState {}", e1);
-			}
+			logminerState = CommonConstants.STREAMING_ETL_LOGMINER_STATE_ERROR;
+		} 
+		finally {
+			if (logminerState == CommonConstants.STREAMING_ETL_LOGMINER_STATE_ERROR) {
+				log.error(">>> log Logminer state error");
+				LogminerUtils.updateStreamingEtlLogminerState(dbConn, CommonConstants.STREAMING_ETL_LOGMINER_STATE_ERROR);
+			} 
 		}
 		return null;
 
@@ -360,24 +372,46 @@ public class OracleSourceTask extends SourceTask {
 	public void stop() {
 		log.info("Stop called for logminer");
 		this.closed=true;
+		
+		long logminerState = 0L;
 		try {            
 			log.info("Logminer session cancel");
-			logMinerSelect.cancel();
+			if (logMinerSelect != null) logMinerSelect.cancel();
+
 			OracleSqlUtils.executeCallableStmt(dbConn, OracleConnectorSQL.STOP_LOGMINER_CMD);
+
 			if (dbConn!=null){
 				log.info("Closing database connection.Last SCN : {}",streamOffsetScn);        
-				logMinerSelect.close();
-				logMinerStartStmt.close();        
-				dbConn.close();
+
+				if (logMinerSelect != null) logMinerSelect.close();
+
+				if (logMinerStartStmt != null) logMinerStartStmt.close();      
+
+				if (dbConn != null) dbConn.close();
 			}
 		} catch (SQLException e) {
-			log.error(e.getMessage());
+			log.error(">>> error massage={}", e.getMessage());
+			logminerState = CommonConstants.STREAMING_ETL_LOGMINER_STATE_ERROR;
+		} catch (Exception e) {
+			log.error(">>> error massage={}", e.getMessage());
+			logminerState = CommonConstants.STREAMING_ETL_LOGMINER_STATE_ERROR;
 		}
 		finally {
-			try {
-				StreamingEtlUtils.updateStreamingEtlLogminerState(dbConn, CommonConstants.STREAMING_ETL_LOGMINER_STATE_SHUTDOWN);
-			} catch (Exception e1) {
-				log.error(">>> error call updateStreamingEtlLogminerState {}", e1);
+			if (logminerState == CommonConstants.STREAMING_ETL_LOGMINER_STATE_ERROR) {
+				log.error(">>> log Logminer state error");
+				LogminerUtils.updateStreamingEtlLogminerState(dbConn, CommonConstants.STREAMING_ETL_LOGMINER_STATE_ERROR);
+			}
+			
+			log.info("S>>> call updateStreamingEtlLogminerState, state = {}", CommonConstants.STREAMING_ETL_LOGMINER_STATE_SHUTDOWN);
+			LogminerUtils.updateStreamingEtlLogminerState(dbConn, CommonConstants.STREAMING_ETL_LOGMINER_STATE_SHUTDOWN);
+			
+			if (dbConn != null) {
+				try {
+					dbConn.close();
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					log.error(">>> error massage={}", e.getMessage(), e);
+				}
 			}
 		}
 

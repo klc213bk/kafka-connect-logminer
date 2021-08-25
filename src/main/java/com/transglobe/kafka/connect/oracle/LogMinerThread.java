@@ -106,6 +106,7 @@ public class LogMinerThread implements Runnable {
 
 	@Override
 	public void run() {
+		long logminerState = 0L;
 		try {
 			while(!this.closed){
 				log.info("Log miner process is waiting for 5 seconds before start on Thread");
@@ -291,11 +292,14 @@ public class LogMinerThread implements Runnable {
 				log.info(trnCollection.toString());
 			}        
 		} catch (InterruptedException ie){
-			log.error("Thread interrupted exception");        
+			log.error("Thread interrupted exception");  
+			logminerState = CommonConstants.STREAMING_ETL_LOGMINER_STATE_SHUTDOWN;
 		} catch(RuntimeException re){
 			log.error("Thread runtime exception");
+			logminerState = CommonConstants.STREAMING_ETL_LOGMINER_STATE_ERROR;
 		} catch (Exception e) {
 			log.error("Thread general exception {}",e);
+			logminerState = CommonConstants.STREAMING_ETL_LOGMINER_STATE_ERROR;
 			try {
 				OracleSqlUtils.executeCallableStmt(dbConn, OracleConnectorSQL.STOP_LOGMINER_CMD);  
 				throw new ConnectException("Logminer stopped because of "+e.getMessage());
@@ -304,17 +308,22 @@ public class LogMinerThread implements Runnable {
 			}                
 		} finally {
 			// log the error to streaming etl
-			try {
-				StreamingEtlUtils.updateStreamingEtlLogminerState(dbConn, CommonConstants.STREAMING_ETL_LOGMINER_STATE_ERROR);
-			} catch (Exception e) {
-				log.error(">>> error call updateStreamingEtlLogminerState {}", e);
+			if (logminerState == CommonConstants.STREAMING_ETL_LOGMINER_STATE_ERROR) {
+				log.error(">>> log logminer state error");
+				LogminerUtils.updateStreamingEtlLogminerState(dbConn, CommonConstants.STREAMING_ETL_LOGMINER_STATE_ERROR);
+				
+			} else if (logminerState == CommonConstants.STREAMING_ETL_LOGMINER_STATE_SHUTDOWN) {
+				log.error(">>> log logminer state shutdown");
+				LogminerUtils.updateStreamingEtlLogminerState(dbConn, CommonConstants.STREAMING_ETL_LOGMINER_STATE_SHUTDOWN);
 			}
+			
 		}
 	}
 
 	public void shutDown(){
-		log.info("Logminer Thread shutdown called");
+		log.info("Logminer Thread shutdown called!!!");
 		this.closed=true;    
+		
 	}
 
 	private SourceRecord createRecords(DMLRow dmlRow) throws Exception{
